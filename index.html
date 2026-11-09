@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>George's Mischief Quest</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+/* Layout: 16-bit sorcery RPG — aurora battle scene (trickster mage vs Debt Serpent), 7 daily rituals, two long questlines (PMI certification, core forge), serpent-strike panel, rune map. Single dark emerald-and-gold theme by design. */
+:root{
+  --night:#06110c; --win-top:#13452f; --win-bot:#0a2419; --edge:#e3b341; --edge-dk:#a6761d; --ink:#040a07;
+  --text:#ecf7ef; --dim:#94bfa3; --gold:#e3b341; --glow:#5fe08a; --hp:#d24b3c;
+  --f-pixel:"Press Start 2P", ui-monospace, "Courier New", monospace;
+  --f-text:"VT323", ui-monospace, "Courier New", monospace;
+  --px:5px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{background:var(--night)}
+body{margin:0;background:var(--night);color:var(--text);font-family:var(--f-text);font-size:21px;line-height:1.15;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 56px;
+  background-image:radial-gradient(#123524 1px,transparent 1.2px);background-size:7px 7px}
+.wrap{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0;padding:0}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--glow);outline-offset:2px}
+canvas.sprite{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
+
+.win{background:linear-gradient(180deg,var(--win-top),var(--win-bot));border:3px solid var(--edge);border-radius:6px;
+  box-shadow:0 0 0 3px var(--ink),inset 0 0 0 2px var(--ink),inset 0 0 0 4px var(--edge-dk),6px 6px 0 3px rgba(0,0,0,.5);padding:15px 17px}
+.win h2{font-family:var(--f-pixel);font-size:12px;margin:0 0 12px;color:var(--gold);line-height:1.5;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.win h2 small{font-family:var(--f-text);font-size:18px;color:var(--dim);margin-left:auto}
+
+/* scene */
+.scene{position:relative;height:300px;border:3px solid var(--edge);border-radius:6px;overflow:hidden;box-shadow:0 0 0 3px var(--ink),6px 6px 0 3px rgba(0,0,0,.5);
+  background:linear-gradient(180deg,#020806 0%,#071d14 50%,#0e2d1f 80%,#14392a 100%)}
+.aurora{position:absolute;left:-10%;right:-10%;top:18px;height:90px;opacity:.55;
+  background:repeating-linear-gradient(90deg,transparent 0 10px,rgba(95,224,138,.35) 10px 14px,transparent 14px 22px,rgba(227,179,65,.18) 22px 24px);
+  -webkit-mask-image:radial-gradient(60% 70% at 50% 40%,#000,transparent);mask-image:radial-gradient(60% 70% at 50% 40%,#000,transparent);animation:aur 6s steps(6) infinite alternate}
+@keyframes aur{to{transform:translateX(30px)}}
+.stars i{position:absolute;width:3px;height:3px;background:#dfffe9;opacity:.8}
+.stars i.t{animation:tw 1.6s steps(2) infinite}
+@keyframes tw{50%{opacity:.15}}
+.pines{position:absolute;left:0;right:0;bottom:44px;height:70px;
+  background:
+   conic-gradient(from 150deg at 8% 0%,transparent 0 60deg,#081a12 0 0) 0 0/90px 70px repeat-x}
+.ground{position:absolute;left:0;right:0;bottom:0;height:44px;border-top:4px solid var(--edge-dk);
+  background:repeating-linear-gradient(90deg,#2b3a33 0 22px,#223029 22px 24px),#2b3a33}
+.ground::after{content:"";position:absolute;inset:16px 0 0;background:repeating-linear-gradient(90deg,#1c2722 0 18px,#26332d 18px 36px)}
+.hero,.foe{position:absolute;bottom:40px;display:flex;align-items:flex-end;z-index:2}
+.hero{left:12%} .foe{right:6%}
+.illusion{position:absolute;left:calc(-7 * var(--px));bottom:calc(1 * var(--px));opacity:.32;filter:hue-rotate(40deg) brightness(1.4);animation:shimmer 1.8s steps(3) infinite}
+@keyframes shimmer{0%,100%{opacity:.32;transform:translateX(0)}50%{opacity:.12;transform:translateX(-4px)}}
+.bob{animation:bob 1s steps(2) infinite;display:flex;align-items:flex-end;position:relative;z-index:1}
+.foe .bob{animation:sway 1.4s steps(2) infinite}
+@keyframes bob{50%{transform:translateY(-4px)}}
+@keyframes sway{50%{transform:translateX(-4px)}}
+.staff{margin-left:calc(-2 * var(--px));margin-bottom:calc(3 * var(--px))}
+.orbglow{position:absolute;right:calc(-1 * var(--px));top:calc(-6 * var(--px));width:calc(10 * var(--px));height:calc(10 * var(--px));border-radius:50%;background:radial-gradient(rgba(95,224,138,.6),transparent 70%);animation:pulse 1.2s steps(3) infinite}
+@keyframes pulse{50%{opacity:.4}}
+.foe.hit{animation:hit .5s steps(2) 1}
+@keyframes hit{0%,100%{transform:none;filter:none}25%{transform:translateX(8px);filter:brightness(3) saturate(0)}75%{transform:translateX(-6px);filter:brightness(3) saturate(0)}}
+.foe.dead{opacity:.25;filter:grayscale(1)}
+.dmg{position:absolute;right:16%;bottom:170px;z-index:4;font-family:var(--f-pixel);font-size:16px;color:var(--gold);text-shadow:2px 2px 0 var(--ink);opacity:0;pointer-events:none}
+.dmg.go{animation:dmg 1.3s ease-out 1}
+@keyframes dmg{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-50px)}}
+.plate{position:absolute;top:10px;z-index:3;background:rgba(4,10,7,.78);border:2px solid var(--edge);border-radius:5px;padding:8px 10px;min-width:220px}
+.plate.l{left:10px}.plate.r{right:10px}
+.plate .nm{font-family:var(--f-pixel);font-size:10px;display:flex;justify-content:space-between;gap:10px;line-height:1.5}
+.bar{height:10px;margin-top:6px;border:2px solid var(--edge);background:var(--ink);position:relative}
+.bar i{position:absolute;inset:0 auto 0 0;transition:width .6s steps(12)}
+.bar.exp i{background:var(--glow)} .bar.hp i{background:var(--hp)}
+.plate small{display:block;font-size:17px;color:var(--dim);margin-top:4px;font-variant-numeric:tabular-nums}
+
+.dialog{display:flex;gap:14px;align-items:flex-start;min-height:84px}
+.dialog p{margin:0;font-size:23px;flex:1;min-width:0}
+.cursor{animation:blink .8s steps(2) infinite;color:var(--gold)}
+@keyframes blink{50%{opacity:0}}
+.mute{font-family:var(--f-pixel);font-size:9px;color:var(--dim);border:2px solid var(--dim);border-radius:4px;padding:7px 8px;white-space:nowrap}
+
+.statrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.stat{display:flex;align-items:center;gap:12px;padding:10px 14px}
+.stat b{font-family:var(--f-pixel);font-size:15px;display:block;font-variant-numeric:tabular-nums}
+.stat span{font-size:17px;color:var(--dim)}
+
+.daynav{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.arrows{display:flex;align-items:center;gap:10px}
+.arrow{font-family:var(--f-pixel);font-size:13px;width:42px;height:42px;border:3px solid var(--edge);border-radius:6px;background:var(--win-bot);box-shadow:0 0 0 2px var(--ink)}
+.arrow:disabled{opacity:.3;cursor:default}
+.dayname{font-family:var(--f-pixel);font-size:13px;min-width:200px;text-align:center}
+.qcount{font-size:21px;color:var(--dim)} .qcount b{color:var(--gold);font-weight:normal}
+.sechead{font-family:var(--f-pixel);font-size:12px;color:var(--gold);margin:4px 0 -4px}
+
+.quests{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.q{display:flex;flex-direction:column;gap:10px;min-width:0;position:relative}
+.q.done{background:linear-gradient(180deg,#2a7a4d,#0f3d2a)}
+.qhead{display:flex;gap:12px;align-items:center}
+.ico{flex:none;width:52px;height:52px;display:grid;place-items:center;background:rgba(4,10,7,.5);border:2px solid var(--edge-dk);border-radius:4px}
+.qhead h3{margin:0;font-family:var(--f-pixel);font-size:10px;line-height:1.6}
+.qhead p{margin:2px 0 0;font-size:18px;color:var(--dim)}
+.q.done .qhead p,.q.done .sub{color:#cdf3d9}
+.reward{position:absolute;top:10px;right:12px;font-family:var(--f-pixel);font-size:9px;color:var(--gold)}
+.ctrl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:auto}
+.cmd{font-family:var(--f-pixel);font-size:10px;padding:10px 12px;border:2px solid var(--edge);border-radius:5px;background:rgba(4,10,7,.5);text-transform:uppercase}
+.cmd:hover{background:rgba(227,179,65,.15)}
+.cmd.on{background:var(--gold);color:var(--ink)}
+.cmd.wide{flex:1}
+.step{width:40px;height:40px;font-family:var(--f-pixel);font-size:14px;border:2px solid var(--edge);border-radius:5px;background:rgba(4,10,7,.5)}
+.count{font-family:var(--f-pixel);font-size:15px;min-width:60px;text-align:center;font-variant-numeric:tabular-nums}
+.sub{font-size:18px;color:var(--dim);font-variant-numeric:tabular-nums}
+.pips{display:grid;gap:4px;width:100%}
+.pip{display:grid;place-items:center;height:44px;border:2px solid rgba(227,179,65,.35);border-radius:4px;background:rgba(4,10,7,.35)}
+.pip canvas{opacity:.28;filter:grayscale(1)}
+.pip.on canvas{opacity:1;filter:none}
+.pip.on{border-color:var(--gold)}
+
+.long{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.steps li{display:flex;gap:10px;align-items:center}
+.steps button{display:flex;gap:10px;align-items:center;text-align:left;width:100%;padding:6px 8px;border:2px solid rgba(227,179,65,.3);border-radius:4px;background:rgba(4,10,7,.35)}
+.steps button:hover{border-color:var(--gold)}
+.steps .box{flex:none;width:20px;height:20px;border:2px solid var(--gold);display:grid;place-items:center;font-family:var(--f-pixel);font-size:10px;color:var(--ink)}
+.steps .on .box{background:var(--gold)}
+.steps .on .t{color:var(--dim);text-decoration:line-through}
+.steps .xp{margin-left:auto;font-family:var(--f-pixel);font-size:8px;color:var(--gold);white-space:nowrap}
+.steps .auto{cursor:default}
+.hours{display:flex;flex-direction:column;gap:6px;margin:4px 0 12px}
+.bigbar{height:16px;border:2px solid var(--edge);background:var(--ink);position:relative}
+.bigbar i{position:absolute;inset:0 auto 0 0;background:var(--glow);transition:width .6s steps(12)}
+.runes{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:6px 0 10px}
+.rune{aspect-ratio:1;max-width:100%;display:grid;place-items:center;border:2px solid rgba(227,179,65,.35);border-radius:4px;background:rgba(4,10,7,.4);font-family:var(--f-pixel);font-size:14px;color:#2d5a40}
+.rune.on{color:var(--glow);border-color:var(--gold);text-shadow:0 0 8px rgba(95,224,138,.8)}
+
+.lower{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
+.attack{display:flex;flex-direction:column;gap:12px}
+.bnums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.bnums div{font-size:17px;color:var(--dim)}
+.bnums b{display:block;font-family:var(--f-pixel);font-size:12px;color:var(--text);margin-top:4px;font-variant-numeric:tabular-nums}
+.field{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.field label{display:flex;flex-direction:column;gap:3px;font-size:17px;color:var(--dim)}
+.field input{font-family:var(--f-pixel);font-size:11px;padding:9px 8px;border:2px solid var(--edge);border-radius:5px;background:var(--ink);color:var(--text);width:130px;min-width:0}
+.cmd.atk{background:var(--hp);color:#fff;padding:12px 14px}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:18px}
+.log li{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed rgba(227,179,65,.25);padding:3px 0;font-variant-numeric:tabular-nums}
+.log button{color:var(--dim);font-family:var(--f-pixel);font-size:9px;padding:2px 6px}
+details summary{cursor:pointer;font-size:18px;color:var(--dim)}
+.grid28{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cell{aspect-ratio:1;max-width:100%;border:2px solid rgba(227,179,65,.3);border-radius:3px;background:rgba(4,10,7,.5);font-family:var(--f-pixel);font-size:8px;color:var(--dim);display:grid;place-items:center}
+.cell.l1{background:#1d4a34} .cell.l2{background:#2f9a5e;color:#fff} .cell.l3{background:var(--gold);color:var(--ink)}
+.cell.sel{border-color:var(--glow);box-shadow:0 0 0 2px var(--glow)}
+.legend{display:flex;gap:6px;align-items:center;font-size:17px;color:var(--dim);margin-top:10px}
+.legend .cell{width:16px;height:16px;aspect-ratio:auto}
+.rules{margin:10px 0 0;padding:0;list-style:none;font-size:18px;color:var(--dim);display:flex;flex-direction:column;gap:4px}
+.rules li::before{content:"ᚱ ";color:var(--gold)}
+.sync{font-size:17px;color:var(--dim);text-align:center}
+
+.flash{position:fixed;inset:0;background:var(--glow);opacity:0;pointer-events:none;z-index:30}
+.flash.go{animation:fl .6s steps(3) 1}
+@keyframes fl{0%,66%{opacity:.6}100%{opacity:0}}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;
+  font-family:var(--f-pixel);font-size:12px;color:var(--gold);background:var(--win-bot);border:3px solid var(--edge);box-shadow:0 0 0 3px var(--ink);
+  border-radius:6px;padding:12px 16px;opacity:0;transition:opacity .15s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+@media (max-width:880px){ .quests{grid-template-columns:repeat(2,minmax(0,1fr))} .long,.lower{grid-template-columns:1fr} .statrow{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:600px){
+  :root{--px:3px}
+  .scene{height:280px}
+  .plate{min-width:0;width:calc(50% - 15px);padding:6px 8px}
+  .plate .nm{font-size:8px;flex-direction:column;gap:2px}
+  .hero{left:9%} .foe{right:3%}
+  .quests{grid-template-columns:1fr}
+  .bnums{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dayname{min-width:0;font-size:11px}
+  .dialog p{font-size:20px}
+}
+@media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} }
+</style>
+
+<div class="wrap">
+  <section class="scene" aria-label="Battle scene: George the trickster mage versus the Debt Serpent">
+    <div class="stars" id="stars"></div>
+    <div class="aurora"></div>
+    <div class="pines"></div>
+    <div class="ground"></div>
+    <div class="plate l">
+      <div class="nm"><span>GEORGE</span><span id="lvl">LV 1</span></div>
+      <div class="bar exp"><i id="expFill" style="width:0"></i></div>
+      <small id="expTxt">EXP 0/500 · Apprentice</small>
+    </div>
+    <div class="plate r">
+      <div class="nm"><span>DEBT SERPENT</span><span id="hpAmt">5,000</span></div>
+      <div class="bar hp"><i id="hpFill" style="width:100%"></i></div>
+      <small id="hpTxt">HP 5,000 / 5,000</small>
+    </div>
+    <div class="hero">
+      <canvas class="sprite illusion" id="spIllusion"></canvas>
+      <div class="bob"><canvas class="sprite" id="spMage"></canvas><div style="position:relative"><canvas class="sprite staff" id="spStaff"></canvas><span class="orbglow"></span></div></div>
+    </div>
+    <div class="foe" id="foe"><div class="bob"><canvas class="sprite" id="spSerpent"></canvas></div></div>
+    <div class="dmg" id="dmg"></div>
+  </section>
+
+  <section class="win dialog">
+    <p id="say">The Debt Serpent coils around the treasury. Only gold and cunning can break its grip.<span class="cursor">▼</span></p>
+    <button class="mute" id="mute">SOUND: ON</button>
+  </section>
+
+  <section class="statrow">
+    <div class="win stat"><canvas class="sprite" id="icOrb"></canvas><div><b id="sTotal">0</b><span>Total EXP</span></div></div>
+    <div class="win stat"><canvas class="sprite" id="icStar"></canvas><div><b id="sToday">0</b><span>EXP today</span></div></div>
+    <div class="win stat"><canvas class="sprite" id="icFlame"></canvas><div><b id="sStreak">0</b><span>Day streak</span></div></div>
+    <div class="win stat"><canvas class="sprite" id="icCoin"></canvas><div><b id="sEarned">0</b><span>Toward loan</span></div></div>
+  </section>
+
+  <div class="daynav">
+    <div class="arrows">
+      <button class="arrow" id="prev" aria-label="Previous day">◀</button>
+      <span class="dayname" id="dayLabel">TODAY</span>
+      <button class="arrow" id="next" aria-label="Next day">▶</button>
+    </div>
+    <div class="qcount" id="doneTxt">RITUALS 0/7</div>
+  </div>
+
+  <section class="quests" id="quests" aria-label="Daily rituals"></section>
+
+  <div class="sechead">LONG QUESTS</div>
+  <section class="long">
+    <div class="win">
+      <h2>The PMI Certification <small id="pmiState">0/7 runes</small></h2>
+      <div class="hours">
+        <span class="sub" id="hrsTxt">Study hours: 0 / 35</span>
+        <div class="bigbar"><i id="hrsFill" style="width:0"></i></div>
+        <span class="sub">Hours fill in from the daily Tome of Projects quest.</span>
+      </div>
+      <ul class="steps" id="pmiSteps"></ul>
+      <details style="margin-top:10px">
+        <summary>Questline settings</summary>
+        <div class="field" style="margin-top:10px">
+          <label for="hrsGoal">Required hours<input id="hrsGoal" type="number" min="1" step="1" value="35"></label>
+          <label for="hrsExtra">Hours before tracking<input id="hrsExtra" type="number" min="0" step="0.5" value="0"></label>
+          <button class="cmd" id="pmiSave">Save</button>
+        </div>
+      </details>
+    </div>
+    <div class="win">
+      <h2>Forge the Core <small id="coreState">0 / 60 sessions</small></h2>
+      <p class="sub" style="margin:0">Every Core training day lights a rune. Light all 60 runes and the forge is done.</p>
+      <div class="runes" id="runes"></div>
+      <span class="sub" id="coreNext"></span>
+    </div>
+  </section>
+
+  <section class="lower">
+    <div class="win attack">
+      <h2>Strike the Debt Serpent</h2>
+      <div class="bnums">
+        <div>Loan<b id="bGoal">–</b></div>
+        <div>Earned<b id="bEarned">–</b></div>
+        <div>Left<b id="bLeft">–</b></div>
+        <div>Per week<b id="bPace">–</b></div>
+      </div>
+      <div class="bigbar"><i id="loanFill" style="width:0;background:var(--gold)"></i></div>
+      <div class="field">
+        <label for="amtIn">Amount earned or paid<input id="amtIn" type="number" step="1" min="1" inputmode="decimal" placeholder="250"></label>
+        <button class="cmd atk" id="strike">Strike!</button>
+      </div>
+      <span class="sub">+1 EXP for every 10 you put toward the loan.</span>
+      <ul class="log" id="log"></ul>
+      <details>
+        <summary>Serpent settings</summary>
+        <div class="field" style="margin-top:10px">
+          <label for="sGoal">Loan amount<input id="sGoal" type="number" step="50" min="1" value="5000"></label>
+          <label for="sCur">Currency<input id="sCur" type="text" maxlength="4" value="$" style="width:80px"></label>
+          <label for="sDead">Target date<input id="sDead" type="date" style="width:170px"></label>
+          <button class="cmd" id="sSave">Save</button>
+        </div>
+      </details>
+    </div>
+    <div class="win">
+      <h2>Rune map · 28 days</h2>
+      <div class="grid28" id="grid28"></div>
+      <div class="legend">Few <span class="cell"></span><span class="cell l1"></span><span class="cell l2"></span><span class="cell l3"></span> All 7</div>
+      <ul class="rules">
+        <li>Tap a day to edit it.</li>
+        <li>6 of 7 rituals keeps the streak alive.</li>
+        <li>All 7 = +50 EXP flawless-day bonus.</li>
+        <li>500 EXP per level.</li>
+      </ul>
+    </div>
+  </section>
+  <div class="sync" id="sync">Saved on this device</div>
+</div>
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+// ================= SPRITES (original designs) =================
+const PAL={k:"#0a1410",D:"#0f3d2a",G:"#1f8a4c",L:"#5fe08a",c:"#e3b341",C:"#a6761d",s:"#e8c39e",w:"#ffffff",r:"#ff3b3b",R:"#c0392b",
+  b:"#3fd0c9",B:"#a9f0ea",S:"#8fa39a",n:"#8b5a2b",y:"#fff2b0",x:"#ff7a2e",o:"#ffb347",p:"#f2f2f2"};
+const SPR={
+mage:[
+".....kkkkkk.....",
+"....kDGGGGDk....",
+"...kDGGLLGGDk...",
+"...kGGkkkkGGk...",
+"..kDGkssssskGDk.",
+"..kDGksLsLskGDk.",
+"..kDGkssssskGDk.",
+"..kDGkssCsskGDk.",
+"..kDGGkkkkkGGDk.",
+".kDGGcGGGGGcGGDk",
+".kDGcGGGGGGGcGDk",
+".kDGGcGGLGGcGGDk",
+"kDGGGGcGGGcGGGDk",
+"kDGGGGGcGcGGGGDk",
+"kDGGGGGGcGGGGGDk",
+"kDGGGGGGGGGGGGDk",
+"kDDGGGGGGGGGGDDk",
+"kDDDGGGGGGGGDDDk",
+"kcccccccccccccck",
+".kkkkkkkkkkkkkk.",
+"....kkk..kkk...."],
+staff:[
+"..kkk..",".kLLLk.","kLwLLLk","kLLLLLk",".kLLLk.","..kck..","..kck..","..kCk..","..kck..","..kck..",
+"..kCk..","..kck..","..kck..","..kCk..","..kck..","..kck..","...k..."],
+serpent:[
+"...kkkk.......................",
+"..kGGGGk......................",
+".kGGrGGGk.....................",
+"kGGGGGGGGk....................",
+"kRkGGGGGGGk...................",
+".kwkkGGGGGk...................",
+"..k..kGGGGGk..................",
+"......kGGGGGk.................",
+".......kGGGGGkkkkkkkk.........",
+"........kGGGGGGGGGGGGkk.......",
+"........kGGcccccccGGGGGk......",
+".......kGGcCcCcCcCccGGGGk.....",
+"......kGGGGGGGGGGGGGGcGGGk....",
+".....kGGGGkkkkkkkkkkGGcGGGk...",
+".....kGGcck.........kGGcGGk...",
+".....kGGcck..........kGGGGk...",
+"......kGGGGkkkkkkkkkkGGGGk....",
+".......kGGGGGGGGGGGGGGGGk.....",
+"........kkkkkkkkkkkkkkkk.kk...",
+"........................kGGk..",
+".........................kk..."],
+elixir:[
+"....kkkk....","....knnk....","....kkkk....",".....kk.....","....kBBk....","...kBwwBk...",
+"..kbbbbbbk..",".kbBbbbbbbk.",".kbBbbbbbbk.",".kbbbbbbbbk.","..kbbbbbbk..","...kkkkkk..."],
+pill:[
+"...kkkkk....","..kpppppk...",".kpppppppk..","kpppppppkk..","kppppppkRRk.",".kppppkRRRRk",
+"..kkkkRRRRRk","....kRRRRRk.",".....kRRRk..","......kkk..."],
+meal:[
+"..k..k..k...","...k..k..k..","..k..k..k...","kkkkkkkkkkkk","kccccccccccK","kcyycccccccK",
+".kccccccccK.","..kCCCCCCK..","...kkkkkk..."],
+dumbbell:[
+"kk........kk","kSk......kSk","kSkkkkkkkkSk","kSppppppppSk","kSkkkkkkkkSk","kSk......kSk","kk........kk"],
+core:[
+".kkkkkkkk.","ksskkksssk","ksssksssk.","kkkkkkkkkk","ksssksssk.","ksssksssk.","kkkkkkkkkk","ksssksssk.",".kkkkkkk.."],
+gold:[
+"....kkkk....","...kccccK...","..kcyyccck..","..kcyccccK..","..kcccccck..","...kccccK...","....kkkk....",
+"..kkkkkk....",".kccccccK...","kcyyccccck..","kcyccccccK..","kcccccccck..",".kccccccK...","..kkkkkk...."],
+tome:[
+".kkkkkkkkkk.",".kGGGGGGGGk.",".kGGcccGGGk.",".kGGcGcGGGk.",".kGGcccGGGk.",".kGGGGGGGGk.",".kppppppppk.",".kkkkkkkkkk."],
+orb:["..kkkk..",".kLLLLk.","kLwLLLLk","kLLLLLLk","kLLLLLLk",".kLLLLk.","..kccK..",".kkkkkk."],
+star:["....k....","...kck...","kkkkcckkk","kcccccyck",".kcccyck.","..kccck..",".kcckcck.","kck...kck","kk.....kk"],
+flame:["....k...","...kLk..","..kLLk..",".kLLGLk.",".kLGGLk.","kLLGcGLk","kLGccGLk",".kLGGLk.","..kkkk.."],
+coin:["..kkkk..",".kccccK.","kcyccccK","kcyCccCK","kcyccccK","kccccccK",".kccccK.","..kkkk.."]
+};
+PAL.K=PAL.k;
+function draw(cv,rows,scale){const w=Math.max(...rows.map(r=>r.length)),h=rows.length; cv.width=w; cv.height=h;
+  const ctx=cv.getContext("2d"); ctx.clearRect(0,0,w,h); rows.forEach((r,y)=>{for(let x=0;x<r.length;x++){const c=PAL[r[x]]; if(c){ctx.fillStyle=c;ctx.fillRect(x,y,1,1)}}});
+  const sc=typeof scale==="number"?scale+"px":scale; cv.style.width="calc("+w+" * "+sc+")"; cv.style.height="calc("+h+" * "+sc+")"; return cv}
+const sprite=(n,s)=>draw(document.createElement("canvas"),SPR[n],s);
+const mount=(id,n,s)=>{const c=document.getElementById(id); c.classList.add("sprite"); draw(c,SPR[n],s)};
+(function(){const s=document.getElementById("stars"); let seed=11; const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
+  for(let i=0;i<40;i++){const e=document.createElement("i"); e.style.left=(rnd()*100)+"%"; e.style.top=(rnd()*50)+"%"; if(i%4===0)e.className="t"; e.style.animationDelay=(rnd()*1.6)+"s"; s.appendChild(e)}})();
+mount("spMage","mage","var(--px)"); mount("spIllusion","mage","var(--px)"); mount("spStaff","staff","var(--px)");
+mount("spSerpent","serpent","calc(var(--px) * 1.15)");
+mount("icOrb","orb",5); mount("icStar","star",4); mount("icFlame","flame",4); mount("icCoin","coin",5);
+
+// ================= SOUND =================
+let soundOn=true; try{soundOn=localStorage.getItem("mq-sound")!=="off"}catch(e){}
+let actx=null;
+function play(seq){ if(!soundOn) return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); let t=actx.currentTime;
+  seq.forEach(([a,b,d,type])=>{const o=actx.createOscillator(),g=actx.createGain(); o.type=type||"square"; o.frequency.setValueAtTime(a,t); o.frequency.exponentialRampToValueAtTime(b,t+d);
+    g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.001,t+d); o.connect(g).connect(actx.destination); o.start(t); o.stop(t+d); t+=d*.9}) }catch(e){} }
+const SFX={tick:[[880,880,.05]],spell:[[400,1600,.18,"triangle"],[1600,1200,.12]],level:[[392,392,.1],[523,523,.1],[659,659,.1],[784,784,.1],[1047,1047,.3]],hit:[[220,60,.3,"sawtooth"]],undo:[[330,300,.08]]};
+function setMute(){document.getElementById("mute").textContent="SOUND: "+(soundOn?"ON":"OFF")}
+document.getElementById("mute").onclick=()=>{soundOn=!soundOn; try{localStorage.setItem("mq-sound",soundOn?"on":"off")}catch(e){} setMute(); if(soundOn)play(SFX.spell)};
+setMute();
+
+// ================= GAME DATA =================
+const LEVEL_XP=500, BONUS=50, STREAK_MIN=6, CORE_GOAL=60;
+const RANKS=["Apprentice","Illusionist","Trickster","Shapeshifter","Rune Master","Spellbinder","Archmage","Master of Mischief"];
+const QUESTS=[
+ {id:"meds",name:"Healing Draught",desc:"Take your medication",xp:20,icon:"pill",say:"The healing draught takes hold. Well done."},
+ {id:"water",name:"Elixir of Hydration",desc:"2 L · 8 elixirs",xp:20,icon:"elixir",say:"Eight elixirs downed. Fully hydrated!"},
+ {id:"meals",name:"The Feast",desc:"Eat at least 2 meals",xp:20,icon:"meal",say:"A proper feast. Even tricksters need fuel."},
+ {id:"workout",name:"Battle Training",desc:"Do a workout",xp:30,icon:"dumbbell",say:"Training complete. STR up!"},
+ {id:"core",name:"Core Training",desc:"Abs session · lights a rune",xp:20,icon:"core",say:"A core rune glows. The forge grows hotter."},
+ {id:"work",name:"Earn the Gold",desc:"Put in the work today",xp:20,icon:"gold",say:"A day's work done. Gold flows toward the serpent's doom."},
+ {id:"study",name:"Tome of Projects",desc:"Study PMI · 60 min target",xp:30,icon:"tome",say:"The Tome of Projects reveals its secrets. INT up!"}
+];
+const PMI=[
+ {id:"enroll",t:"Enroll in a PMI prep course",xp:50},
+ {id:"hours",t:"Complete the required study hours",xp:100,auto:true},
+ {id:"apply",t:"Submit the PMI application",xp:50},
+ {id:"approved",t:"Application approved",xp:50},
+ {id:"book",t:"Book the exam date",xp:50},
+ {id:"mock",t:"Pass a full-length practice exam",xp:100},
+ {id:"pass",t:"PASS THE CERTIFICATION EXAM",xp:300}
+];
+
+const pad=n=>String(n).padStart(2,"0");
+const keyOf=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parseKey=k=>{const[a,b,c]=k.split("-").map(Number);return new Date(a,b-1,c)};
+const addDays=(k,n)=>{const d=parseKey(k);d.setDate(d.getDate()+n);return keyOf(d)};
+const todayKey=()=>keyOf(new Date());
+const fmtDay=k=>{const t=todayKey(); if(k===t)return"TODAY"; if(k===addDays(t,-1))return"YESTERDAY";
+  return parseKey(k).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}).toUpperCase()};
+
+const DEF=()=>({loanGoal:5000,currency:"$",deadline:"2027-06-30",payments:[],pmi:{},hrsGoal:35,hrsExtra:0,medDoses:1});
+let days={}, profile=DEF(), viewKey=todayKey(), coll=null;
+const pending=new Set(), timers={}, chains={};
+const norm=p=>{const o=Object.assign(DEF(),p||{}); o.pmi=Object.assign({},(p&&p.pmi)||{}); o.payments=(p&&p.payments)||[]; return o};
+function lsLoad(){try{const s=JSON.parse(localStorage.getItem("mischiefquest")||"null"); if(s){days=s.days||{}; profile=norm(s.profile)}}catch(e){}}
+function lsSave(){try{localStorage.setItem("mischiefquest",JSON.stringify({days,profile}))}catch(e){}}
+const getDay=k=>Object.assign({meds:0,water:0,meals:0,workout:false,core:false,work:false,study:0},days[k]||{});
+const money=n=>profile.currency+Math.round(n).toLocaleString("en-US");
+
+function questState(q,d){
+  switch(q.id){
+    case"meds":{const ok=d.meds>=profile.medDoses; return{done:ok,xp:ok?q.xp:0}}
+    case"water": return{done:d.water>=8,xp:d.water>=8?q.xp:0};
+    case"meals": return{done:d.meals>=2,xp:d.meals>=2?q.xp:0};
+    case"study": return{done:d.study>=60,xp:d.study>=60?q.xp:0};
+    default: return{done:!!d[q.id],xp:d[q.id]?q.xp:0};
+  }
+}
+function scoreDay(k){const d=getDay(k); let xp=0,done=0; QUESTS.forEach(q=>{const s=questState(q,d); xp+=s.xp; if(s.done)done++}); if(done===QUESTS.length)xp+=BONUS; return{xp,done}}
+const studyHours=()=>Object.values(days).reduce((a,d)=>a+(d.study||0),0)/60+(+profile.hrsExtra||0);
+const coreSessions=()=>Object.values(days).filter(d=>d.core).length;
+const earned=()=>(profile.payments||[]).reduce((a,p)=>a+p.amt,0);
+const pmiDone=id=>id==="hours"?studyHours()>=profile.hrsGoal:!!profile.pmi[id];
+function totalXP(){let t=0; Object.keys(days).forEach(k=>t+=scoreDay(k).xp);
+  PMI.forEach(s=>{if(pmiDone(s.id))t+=s.xp}); t+=Math.floor(Math.min(earned(),profile.loanGoal)/10); return t}
+function streaks(){let k=todayKey(); if(scoreDay(k).done<STREAK_MIN) k=addDays(k,-1);
+  let cur=0; while(scoreDay(k).done>=STREAK_MIN){cur++;k=addDays(k,-1)}
+  let best=0,run=0,prev=null; Object.keys(days).sort().forEach(x=>{if(scoreDay(x).done>=STREAK_MIN){run=(prev&&addDays(prev,1)===x)?run+1:1;prev=x;best=Math.max(best,run)}else{run=0;prev=null}});
+  return{cur,best:Math.max(best,cur)}}
+
+// ================= SAVE =================
+const $=id=>document.getElementById(id);
+function setSync(t){$("sync").textContent=t}
+function persist(id,data){lsSave(); if(!coll) return; pending.add(id); setSync("Saving…"); clearTimeout(timers[id]);
+  timers[id]=setTimeout(()=>{const body=JSON.parse(JSON.stringify(data));
+    chains[id]=(chains[id]||Promise.resolve()).then(()=>coll.doc(id).set(body))
+      .then(()=>{pending.delete(id); if(!pending.size) setSync("Saved to your account · syncs across devices")})
+      .catch(()=>{pending.delete(id); setSync("Saved on this device")})},500)}
+
+// ================= FX =================
+let tt; function toast(t){const el=$("toast"); el.textContent=t; el.classList.add("show"); clearTimeout(tt); tt=setTimeout(()=>el.classList.remove("show"),1500)}
+let typeTimer;
+function say(text,instant){const p=$("say"); clearInterval(typeTimer);
+  const reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(instant||reduce){p.textContent=text; p.insertAdjacentHTML("beforeend",'<span class="cursor">▼</span>'); return}
+  let i=0; p.textContent=""; typeTimer=setInterval(()=>{i+=2; p.textContent=text.slice(0,i); if(i>=text.length){clearInterval(typeTimer); p.insertAdjacentHTML("beforeend",'<span class="cursor">▼</span>')}},22)}
+function flash(){const f=$("flash"); f.classList.remove("go"); void f.offsetWidth; f.classList.add("go")}
+function hitSerpent(t){const f=$("foe"),d=$("dmg"); f.classList.remove("hit"); d.classList.remove("go"); void f.offsetWidth; f.classList.add("hit"); d.textContent=t; d.classList.add("go")}
+function idleLine(){const sd=scoreDay(todayKey()), left=QUESTS.length-sd.done, rem=Math.max(0,profile.loanGoal-earned());
+  if(rem<=0&&pmiDone("pass")) return "Serpent slain AND certified. George, Master of Mischief, bows to no one.";
+  if(rem<=0) return "The Debt Serpent is slain! The loan is closed. Now: the PMI certification awaits.";
+  if(sd.done===QUESTS.length) return "A flawless day. All 7 rituals complete. The serpent shivers.";
+  return left+" ritual"+(left===1?"":"s")+" left today. The serpent still guards "+money(rem)+".";}
+function withLevel(fn){const lb=Math.floor(totalXP()/LEVEL_XP); fn(); const la=Math.floor(totalXP()/LEVEL_XP);
+  if(la>lb){flash(); play(SFX.level); toast("LEVEL UP! LV "+(la+1)); say("George reached LV "+(la+1)+"! New title: "+RANKS[Math.min(la,RANKS.length-1)]+".")}}
+
+// ================= ACTIONS =================
+function setDay(k,patch,qid){
+  withLevel(()=>{const q=QUESTS.find(x=>x.id===qid), before=scoreDay(k), qb=questState(q,getDay(k)).done;
+    days[k]=Object.assign(getDay(k),patch); persist("d-"+k,days[k]);
+    const after=scoreDay(k), qa=questState(q,getDay(k)).done;
+    if(after.done===QUESTS.length&&before.done<QUESTS.length){flash(); play(SFX.level); toast("FLAWLESS DAY! +"+BONUS+" EXP"); say("Flawless! All 7 rituals complete. +"+BONUS+" bonus EXP.")}
+    else if(qa&&!qb){play(SFX.spell); toast("RITUAL COMPLETE! +"+q.xp+" EXP"); say(q.say)}
+    else if(after.xp<before.xp) play(SFX.undo); else play(SFX.tick)});
+  render();
+}
+
+// ================= RENDER =================
+function render(){
+  const tot=totalXP(), lvl=Math.floor(tot/LEVEL_XP)+1, into=tot%LEVEL_XP;
+  $("lvl").textContent="LV "+lvl; $("expFill").style.width=(into/LEVEL_XP*100)+"%";
+  $("expTxt").textContent="EXP "+into+"/"+LEVEL_XP+" · "+RANKS[Math.min(lvl-1,RANKS.length-1)];
+  const st=streaks(); $("sStreak").textContent=st.cur;
+  $("sTotal").textContent=tot.toLocaleString(); $("sToday").textContent=scoreDay(todayKey()).xp; $("sEarned").textContent=money(earned());
+  $("dayLabel").textContent=fmtDay(viewKey); $("next").disabled=viewKey>=todayKey();
+  const sd=scoreDay(viewKey); $("doneTxt").innerHTML="RITUALS <b>"+sd.done+"/"+QUESTS.length+"</b> · "+sd.xp+" EXP";
+  renderQuests(); renderPMI(); renderCore(); renderSerpent(); renderMap();
+}
+function pipRow(n,count,icon,onSet,label){const g=document.createElement("div"); g.className="pips"; g.style.gridTemplateColumns="repeat("+n+",1fr)";
+  for(let i=0;i<n;i++){const b=document.createElement("button"); b.className="pip"+(i<count?" on":""); b.setAttribute("aria-label",label+" "+(i+1)); b.appendChild(sprite(icon,2.5));
+    b.onclick=()=>onSet(count===i+1?i:i+1); g.appendChild(b)} return g}
+function renderQuests(){
+  const d=getDay(viewKey), host=$("quests"); host.innerHTML="";
+  QUESTS.forEach(q=>{const s=questState(q,d), el=document.createElement("article"); el.className="win q"+(s.done?" done":"");
+    el.innerHTML='<div class="qhead"><div class="ico"></div><div><h3></h3><p></p></div></div><span class="reward"></span><div class="ctrl"></div>';
+    el.querySelector(".ico").appendChild(sprite(q.icon,3)); el.querySelector("h3").textContent=q.name; el.querySelector("p").textContent=q.desc;
+    el.querySelector(".reward").textContent=s.done?"DONE +"+s.xp:q.xp+" EXP";
+    const c=el.querySelector(".ctrl"), sub=document.createElement("span"); sub.className="sub";
+    if(q.id==="water"){c.append(pipRow(8,d.water,"elixir",v=>setDay(viewKey,{water:v},"water"),"Elixir")); sub.textContent=(d.water*0.25)+" L of 2 L"; c.append(sub)}
+    else if(q.id==="meals"){c.append(pipRow(3,d.meals,"meal",v=>setDay(viewKey,{meals:v},"meals"),"Meal")); sub.textContent=d.meals+" meal"+(d.meals===1?"":"s")+" · 2 needed, 3rd is a bonus"; c.append(sub)}
+    else if(q.id==="meds"){c.append(pipRow(profile.medDoses,d.meds,"pill",v=>setDay(viewKey,{meds:v},"meds"),"Dose"));
+      const m=document.createElement("button"); m.className="cmd"; m.textContent="Doses/day: "+profile.medDoses;
+      m.onclick=()=>{profile.medDoses=profile.medDoses%4+1; persist("profile",profile); play(SFX.tick); render()}; c.append(m)}
+    else if(q.id==="study"){const mk=(t,v,l)=>{const b=document.createElement("button"); b.className="step"; b.textContent=t; b.setAttribute("aria-label",l); b.onclick=()=>setDay(viewKey,{study:Math.max(0,d.study+v)},"study"); return b};
+      const n=document.createElement("span"); n.className="count"; n.textContent=d.study+"m"; sub.textContent=d.study>=60?"Target reached":(60-d.study)+" min to go";
+      c.append(mk("-",-15,"15 minutes less"),n,mk("+",15,"15 minutes more"),sub)}
+    else {const b=document.createElement("button"); b.className="cmd wide"+(d[q.id]?" on":""); b.textContent=d[q.id]?"✓ Done":"Complete";
+      b.onclick=()=>setDay(viewKey,{[q.id]:!d[q.id]},q.id); c.append(b)}
+    host.appendChild(el)});
+}
+function renderPMI(){
+  const h=studyHours(), g=+profile.hrsGoal||35;
+  $("hrsTxt").textContent="Study hours: "+h.toFixed(1)+" / "+g; $("hrsFill").style.width=Math.min(100,h/g*100)+"%";
+  const ul=$("pmiSteps"); ul.innerHTML=""; let n=0;
+  PMI.forEach(s=>{const on=pmiDone(s.id); if(on)n++; const li=document.createElement("li"), b=document.createElement("button");
+    b.className=(on?"on":"")+(s.auto?" auto":""); b.innerHTML='<span class="box"></span><span class="t"></span><span class="xp"></span>';
+    b.querySelector(".box").textContent=on?"✓":""; b.querySelector(".t").textContent=s.t+(s.auto?" (auto)":""); b.querySelector(".xp").textContent="+"+s.xp+" EXP";
+    if(s.auto){b.setAttribute("aria-disabled","true"); b.onclick=()=>toast(on?"HOURS COMPLETE":(g-h).toFixed(1)+" HOURS TO GO")}
+    else b.onclick=()=>{withLevel(()=>{profile.pmi[s.id]=!profile.pmi[s.id]; persist("profile",profile);
+      if(profile.pmi[s.id]){ if(s.id==="pass"){flash(); play(SFX.level); toast("CERTIFIED!"); say("George has passed the PMI exam! The Tome of Projects is mastered.")}
+        else {play(SFX.spell); toast("+"+s.xp+" EXP"); say("A PMI rune is carved: "+s.t+".")} } else play(SFX.undo)}); render()};
+    li.appendChild(b); ul.appendChild(li)});
+  $("pmiState").textContent=n+"/"+PMI.length+" runes";
+}
+function renderCore(){
+  const n=coreSessions(), host=$("runes"); host.innerHTML=""; const glyphs="ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃ";
+  for(let i=0;i<CORE_GOAL;i++){const r=document.createElement("span"); r.className="rune"+(i<n?" on":""); r.textContent=glyphs[i%glyphs.length]; host.appendChild(r)}
+  $("coreState").textContent=Math.min(n,CORE_GOAL)+" / "+CORE_GOAL+" sessions";
+  $("coreNext").textContent=n>=CORE_GOAL?"The core is forged! Keep the fire lit.":"Next milestone: "+(Math.ceil((n+1)/15)*15)+" sessions. Abs come from core work plus eating well.";
+}
+function renderSerpent(){
+  const g=+profile.loanGoal||5000, e=earned(), rem=Math.max(0,g-e);
+  const left=Math.max(0,Math.ceil((parseKey(profile.deadline)-parseKey(todayKey()))/864e5));
+  $("hpAmt").textContent=money(rem); $("hpFill").style.width=(rem/g*100)+"%"; $("hpTxt").textContent=rem<=0?"SLAIN!":"HP "+money(rem)+" / "+money(g);
+  $("bGoal").textContent=money(g); $("bEarned").textContent=money(e); $("bLeft").textContent=money(rem);
+  $("bPace").textContent=rem<=0?"Done!":left>0?money(rem/(left/7)):"–"; $("loanFill").style.width=Math.min(100,e/g*100)+"%";
+  $("foe").classList.toggle("dead",rem<=0);
+  const ul=$("log"); ul.innerHTML="";
+  (profile.payments||[]).slice(-5).reverse().forEach(p=>{const li=document.createElement("li"), span=document.createElement("span");
+    span.textContent=parseKey(p.d).toLocaleDateString("en-GB",{day:"numeric",month:"short"})+" · "+money(p.amt);
+    const x=document.createElement("button"); x.textContent="UNDO"; x.setAttribute("aria-label","Remove this entry");
+    x.onclick=()=>{profile.payments=profile.payments.filter(q=>q!==p); persist("profile",profile); play(SFX.undo); render()};
+    li.append(span,x); ul.appendChild(li)});
+}
+function renderMap(){const host=$("grid28"); host.innerHTML=""; const t=todayKey();
+  for(let i=27;i>=0;i--){const k=addDays(t,-i), sd=scoreDay(k), b=document.createElement("button");
+    const lv=sd.done===0?"":sd.done===QUESTS.length?"l3":sd.done>=STREAK_MIN?"l2":"l1";
+    b.className="cell "+lv+(k===viewKey?" sel":""); b.textContent=parseKey(k).getDate();
+    b.setAttribute("aria-label",fmtDay(k)+": "+sd.done+" of 7"); b.onclick=()=>{viewKey=k; play(SFX.tick); render()}; host.appendChild(b)}}
+
+// ================= CONTROLS =================
+$("prev").onclick=()=>{viewKey=addDays(viewKey,-1); play(SFX.tick); render()};
+$("next").onclick=()=>{if(viewKey<todayKey()){viewKey=addDays(viewKey,1); play(SFX.tick); render()}};
+$("strike").onclick=()=>{
+  const v=parseFloat($("amtIn").value); if(!(v>0)){toast("ENTER AN AMOUNT"); return}
+  const remB=Math.max(0,profile.loanGoal-earned());
+  withLevel(()=>{profile.payments=(profile.payments||[]).concat([{d:viewKey,amt:Math.round(v*100)/100}]); persist("profile",profile); $("amtIn").value="";
+    const remA=Math.max(0,profile.loanGoal-earned());
+    if(remA<=0&&remB>0){flash(); play(SFX.level); hitSerpent("SLAIN!"); say("The Debt Serpent is slain! The loan is closed. Freedom tastes like gold.")}
+    else {play(SFX.hit); hitSerpent("-"+money(v)); say("Strike! "+money(v)+" of damage. The serpent still guards "+money(remA)+".")}
+    toast("+"+Math.floor(Math.min(v,remB)/10)+" EXP")});
+  render();
+};
+$("sSave").onclick=()=>{const g=parseFloat($("sGoal").value), c=$("sCur").value.trim(), dd=$("sDead").value;
+  if(g>0) profile.loanGoal=g; if(c) profile.currency=c; if(dd) profile.deadline=dd;
+  persist("profile",profile); play(SFX.spell); toast("SERPENT UPDATED"); render(); say(idleLine())};
+$("pmiSave").onclick=()=>{const g=parseFloat($("hrsGoal").value), x=parseFloat($("hrsExtra").value);
+  if(g>0) profile.hrsGoal=g; if(x>=0) profile.hrsExtra=x; persist("profile",profile); play(SFX.spell); toast("QUESTLINE UPDATED"); render()};
+function fillSettings(){$("sGoal").value=profile.loanGoal; $("sCur").value=profile.currency; $("sDead").value=profile.deadline; $("hrsGoal").value=profile.hrsGoal; $("hrsExtra").value=profile.hrsExtra}
+let lastToday=todayKey();
+setInterval(()=>{const t=todayKey(); if(t!==lastToday){ if(viewKey===lastToday) viewKey=t; lastToday=t; render() }},60000);
+
+// ================= BOOT =================
+lsLoad(); fillSettings(); render(); say(idleLine(),true);
+(async()=>{
+  const use=window.claude&&window.claude.use; if(!use){ setSync("Saved on this device"); return }
+  const [db,user]=await Promise.all([use("db").catch(()=>null),use("user").catch(()=>null)]);
+  const uid=user?await user.id().catch(()=>null):null; if(!db||!uid){ setSync("Saved on this device"); return }
+  coll=db.collection("data/users/"+uid); setSync("Loading save file…");
+  const timer=setTimeout(()=>setSync("Can't reach your save file yet. Showing this device's copy."),10000); let first=true;
+  coll.onSnapshot(snap=>{ if(!snap.metadata.fromCache) clearTimeout(timer);
+    if(first&&!snap.metadata.fromCache){ first=false; if(snap.empty&&(Object.keys(days).length||(profile.payments||[]).length)){ Object.keys(days).forEach(k=>persist("d-"+k,days[k])); persist("profile",profile); return } }
+    snap.docs.forEach(doc=>{ if(pending.has(doc.id)||!doc.exists) return; const data=JSON.parse(JSON.stringify(doc.data()));
+      if(doc.id==="profile") profile=norm(data); else if(doc.id.startsWith("d-")) days[doc.id.slice(2)]=data });
+    lsSave(); fillSettings(); render(); say(idleLine(),true);
+    if(!snap.metadata.fromCache&&!pending.size) setSync("Saved to your account · syncs across devices");
+  },()=>{clearTimeout(timer); coll=null; setSync("Saved on this device")});
+})();
+})();
+</script>
+
+</body>
+</html>
